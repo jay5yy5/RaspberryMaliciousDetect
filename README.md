@@ -1,0 +1,2 @@
+# RaspberryMaliciousDetect
+可在樹梅派上快速運行的輕量模型
