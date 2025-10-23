@@ -28,29 +28,20 @@ class WeightedVoter:
 
         # 以 RF 的順序為基準
         self.classes_ = np.array(self.rf.classes_)
-
-        # 若 CatBoost 類別順序不同，對齊機率欄位
-        # CatBoost 沒有 classes_（若有則取用），這裡給個保守對齊寫法：
-        # 假設你有存下 label encoder 或手動 all_labels，才做嚴格對齊。
-        # 否則先略過（若你確認兩者順序相同）。
-        self._cat_order = None  # 需要時再實作
+        self._cat_order = None  
 
     def predict_proba(self, X):
         p_cat = self.cat.predict_proba(X)
         p_rf  = self.rf.predict_proba(X)
 
-        # 若需要，將 p_cat 依 self.classes_ 重新排列到一致順序
-        # if self._cat_order is not None:
-        #     p_cat = p_cat[:, self._cat_order]
 
         return self.w[0]*p_cat + self.w[1]*p_rf
 
     def predict(self, X):
         proba = self.predict_proba(X)
         idx = proba.argmax(axis=1)
-        return self.classes_[idx]   # ← 回傳「類別名稱」而不是 0..K-1
+        return self.classes_[idx]   
 # ===自訂義設定檔===
-# ---- 接著再 load ----
 stage1 = joblib.load('stage1_LightGBM.pkl')
 p = pathlib.Path("weighted_voter_final.pkl")
 stage2 = joblib.load(p)
@@ -126,13 +117,13 @@ def click_method(x,pred):
     else:
         pred_labels = pred.ravel()
 
-    # 2) 展示label
+    # 展示label
     all_labels = ["DDoS","DoS","Normal","Mirai","Recon","Spoofing","Web-based","BruteForce"]
     s = pd.Series(pred_labels)
     counts = s.value_counts().reindex(all_labels, fill_value=0)    # 依 label 值排序
     total = int(counts.sum())
 
-    # 3) 重畫結果畫面
+    # 重畫結果畫面
     clear_frame(result_frame)
 
     # 標題
@@ -145,12 +136,12 @@ def click_method(x,pred):
     bars_frame = tk.Frame(result_frame)
     bars_frame.pack(fill="x", padx=24, pady=6)
 
-    # 用 grid 排版：每個 label 一列：名稱 | 進度條 | 百分比與數量
+    # grid 排版
     row_idx = 0
     for label_value, cnt in counts.items():
         pct = (cnt / total * 100.0) if total > 0 else 0.0
 
-        # label 名稱（字串化；若你有 mapping 可自行替換）
+        # label 名稱
         name_lbl = tk.Label(bars_frame, text=str(label_value), width=18, anchor="w", font=("Arial", 11, "bold"))
         name_lbl.grid(row=row_idx, column=0, sticky="w", padx=(0, 8), pady=6)
 
@@ -159,10 +150,10 @@ def click_method(x,pred):
         pb = ttk.Progressbar(bars_frame, orient="horizontal", length=600,
                             mode="determinate", maximum=100)
         pb.grid(row=row_idx, column=1, sticky="ew", padx=(0, 8), pady=6)
-        pb["value"] = 0  # 先歸零
+        pb["value"] = 0  
 
         # 動畫到目標百分比
-        animate_bar(pb, pct, duration_ms=800, steps=100)  # 可調整速度與順暢度
+        animate_bar(pb, pct, duration_ms=800, steps=100)  
 
         # 右側百分比+數量
         info_lbl = tk.Label(bars_frame, text=f"{pct:6.2f}%  ({cnt})", width=14, anchor="e", font=("Consolas", 11))
@@ -235,7 +226,6 @@ def make_accent_style(name, bg, fg="white", hover=None, active=None):
     )
     return stylename
 
-# 定義不同顏色的樣式
 styles = {
     "DDOS":       make_accent_style("DDOS",       "#7b0b0b", hover="#8e0e0e", active="#5e0808"), 
     "DOS":        make_accent_style("DOS",        "#a11212", hover="#b51515", active="#861010"),
